@@ -1,58 +1,85 @@
 // lib/home_screen.dart
+// BẢN HOÀN CHỈNH: ĐÃ TÁCH FEED_PAGE VÀ STORY_BAR
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // Cần cho hàm _logOut
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; 
+import 'package:provider/provider.dart'; 
 
-// (Đã xóa 'dart:ui' hoàn toàn)
+// ----- CÁC DÒNG IMPORT MỚI (ĐÃ TÁI CẤU TRÚC) -----
+// (Sửa 'btl' nếu tên dự án bạn khác)
+import 'package:btl/providers/language_provider.dart'; 
+import 'package:btl/pages/feed_page.dart';    // <<< FILE CON 1
+import 'package:btl/widgets/story_bar.dart'; // <<< FILE CON 2
+// ---------------------------------------------
 
-// <<< MỚI: Import 3 file đã tách
-import 'widgets/post_card.dart'; 
-import 'widgets/story_bubble.dart'; 
-import 'pages/story_view_page.dart'; 
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
-
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  // --- Các biến trạng thái và dịch vụ ("Bộ não") ---
   
-  int _selectedIndex = 0; 
-  late final List<Widget> _pages;
+  // Firebase services
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final CollectionReference _postsCollection =
+      FirebaseFirestore.instance.collection('posts');
+  final CollectionReference _storiesCollection =
+      FirebaseFirestore.instance.collection('storys'); // (Giữ tên 'storys' của bạn)
 
-  // (Đã xóa ScrollController)
+  // Trạng thái điều hướng
+  int _selectedIndex = 0;
+  
+  // Biến để "giữ" widget story (sửa lỗi nháy)
+  late final Widget _storyBarWidget;
 
+  
   @override
   void initState() {
     super.initState();
-    _pages = [
-      _buildFeedPage(),       // Index 0: Trang Feed
-      _buildReelsPage(),      // Index 1: Trang Video/Reels
-      _buildMessagesPage(),   // Index 2: Trang Tin nhắn
-      _buildSearchPage(),     // Index 3: Trang Tìm kiếm
-      _buildProfilePage(),    // Index 4: Trang Profile (chứa nút Logout)
-    ];
+    // Khởi tạo widget story 1 LẦN DUY NHẤT
+    // và truyền collection 'storys' cho nó
+    _storyBarWidget = StoryBar(storiesCollection: _storiesCollection);
+  }
+  
+  // --- CÁC HÀM XỬ LÝ SỰ KIỆN (LOGIC) ---
+  
+  void _onLikeToggle(String postId, bool currentIsLiked) {
+    _postsCollection.doc(postId).update({
+      'isLiked': !currentIsLiked,
+    }).catchError((e) => print('Lỗi cập nhật like: $e'));
   }
 
-  // (Đã xóa dispose() vì không còn controller)
+  void _onBookmarkToggle(String postId, bool currentIsBookmarked) {
+     _postsCollection.doc(postId).update({
+      'isBookmarked': !currentIsBookmarked,
+    }).catchError((e) => print('Lỗi cập nhật bookmark: $e'));
+  }
 
+  void _onCommentPressed(String postId) { 
+    print('Nhấn comment ở bài $postId'); 
+  }
+
+  void _onSendPressed(String postId) { 
+    print('Nhấn gửi bài $postId'); 
+  }
+  
   void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
+    setState(() { 
+      _selectedIndex = index; 
     });
   }
 
-  // HÀM ĐĂNG XUẤT
   Future<void> _logOut(BuildContext context) async {
     final scaffoldMessenger = ScaffoldMessenger.of(context);
     try {
       await _auth.signOut();
-      print('Đăng xuất thành công, AuthWrapper sẽ tự động chuyển trang.');
+      print('Đăng xuất thành công.');
     } catch (e) {
       print('Lỗi đăng xuất: $e');
       if (context.mounted) {
@@ -63,129 +90,46 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  // --- CÁC TRANG CON CHO TỪNG TAB ---
+  
+  // --- CÁC WIDGET CHO TỪNG TRANG CON ---
 
-  // Page 0: Trang Feed (Fix lỗi ANR bằng CustomScrollView)
+  // (Hàm _buildStoryBar() đã bị XÓA và chuyển đi)
+  
+  // Page 0: Trang Feed (Giờ rất "nhẹ")
   Widget _buildFeedPage() {
-    return CustomScrollView(
-      slivers: [
-        // Sliver 1: Thanh Story
-        SliverToBoxAdapter(
-          child: Container(
-            height: 110, 
-            // (Đã xóa Listener)
-            child: ListView.builder(
-              // (Đã xóa controller)
-              scrollDirection: Axis.horizontal, 
-              itemCount: 10, // 10 STORY
-              itemBuilder: (context, index) {
-                
-                if (index == 0) {
-                  // Story của bạn
-                  return GestureDetector(
-                    onTap: () {
-                      print('Bấm vào story của bạn');
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => StoryViewPage(
-                            username: 'Tin của bạn',
-                            imageUrl: 'https://picsum.photos/id/1005/1080/1920', 
-                          ),
-                        ),
-                      );
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                      child: Column(
-                        children: [
-                          Stack(
-                            clipBehavior: Clip.none,
-                            children: [
-                              CircleAvatar(
-                                radius: 33,
-                                backgroundImage: NetworkImage('https://picsum.photos/id/1005/100/100'),
-                              ),
-                              Positioned(
-                                bottom: -2,
-                                right: -2,
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Icon(Icons.add_circle, color: Colors.blue, size: 24),
-                                ),
-                              )
-                            ],
-                          ),
-                          SizedBox(height: 5),
-                          Text('Tin của bạn', style: TextStyle(fontSize: 12))
-                        ],
-                      ),
-                    ),
-                  );
-                }
-                
-                // Các story khác
-                final storyUsername = 'user_${index}';
-                final storyImageUrl = 'https://picsum.photos/id/101${index}/1080/1920'; 
-
-                return GestureDetector(
-                  onTap: () {
-                    print('Bấm vào story của $storyUsername');
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => StoryViewPage( // <<< Đã sửa lại
-                          username: storyUsername,
-                          imageUrl: storyImageUrl,
-                        ),
-                      ),
-                    );
-                  },
-                  child: StoryBubble(username: storyUsername), // <<< Gọi file widget con
-                );
-              },
-            ),
-          ),
-        ),
-
-        // Sliver 2: Cái đường kẻ
-        SliverToBoxAdapter(
-          child: Divider(height: 1),
-        ),
-
-        // Sliver 3: Danh sách bài đăng
-        SliverList(
-          delegate: SliverChildBuilderDelegate(
-            (context, index) {
-              return PostCard(); // <<< Gọi file widget con
-            },
-            childCount: 10, // 10 BÀI VIẾT
-          ),
-        ),
-      ],
+    // Chỉ cần gọi FeedPage và "truyền" các hàm logic cho nó
+    
+    return FeedPage(
+      storyBar: _storyBarWidget, // Truyền widget story đã được build
+      postsCollection: _postsCollection,
+      onLikeToggle: _onLikeToggle,
+      onBookmarkToggle: _onBookmarkToggle,
+      onCommentPressed: _onCommentPressed,
+      onSendPressed: _onSendPressed,
     );
   }
 
-  // Page 1: Trang Video/Reels (Placeholder)
+  // Page 1: Reels (Đã dịch)
   Widget _buildReelsPage() {
-    return Center(child: Text('Trang Video/Reels (sẽ làm sau)'));
+    final lang = Provider.of<LanguageProvider>(context, listen: false);
+    return Center(child: Text(lang.get('reels_page_title')));
   }
-
-  // Page 2: Trang Tin nhắn (Placeholder)
+  
+  // Page 2: Messages (Đã dịch)
   Widget _buildMessagesPage() {
-    return Center(child: Text('Trang Tin nhắn (sẽ làm sau)'));
+    final lang = Provider.of<LanguageProvider>(context, listen: false);
+    return Center(child: Text(lang.get('messages_page_title')));
   }
-
-  // Page 3: Trang Tìm kiếm (Placeholder)
+  
+  // Page 3: Search (Đã dịch)
   Widget _buildSearchPage() {
-    return Center(child: Text('Trang Tìm kiếm (sẽ làm sau)'));
+    final lang = Provider.of<LanguageProvider>(context, listen: false);
+    return Center(child: Text(lang.get('search_page_title')));
   }
-
-  // Page 4: Trang Profile (chứa nút Logout)
+  
+  // Page 4: Profile (Đã dịch)
   Widget _buildProfilePage() {
+    final lang = Provider.of<LanguageProvider>(context);
     final user = _auth.currentUser;
     return Padding(
       padding: const EdgeInsets.all(16.0),
@@ -195,106 +139,120 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           CircleAvatar(
             radius: 50,
-            backgroundImage: NetworkImage('https://picsum.photos/id/1005/100/100'), 
+            backgroundImage:
+                NetworkImage('https://picsum.photos/id/1005/100/100'),
           ),
           SizedBox(height: 20),
           Text(
-            'Đã đăng nhập với email:',
+            lang.get('logged_in_as'), // Đã dịch
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 16, color: Colors.grey[700]),
           ),
           SizedBox(height: 8),
           Text(
-            user?.email ?? 'Không tìm thấy email',
+            user?.email ?? lang.get('email_not_found'), // Đã dịch
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           SizedBox(height: 40),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.redAccent, 
+              backgroundColor: Colors.redAccent,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 12),
             ),
-            onPressed: () => _logOut(context), 
-            child: Text('Đăng xuất', style: TextStyle(fontSize: 16)),
+            onPressed: () => _logOut(context),
+            child: Text(lang.get('log_out'), style: TextStyle(fontSize: 16)), // Đã dịch
           ),
         ],
       ),
     );
   }
 
-
+  // --- HÀM BUILD CHÍNH ---
   @override
   Widget build(BuildContext context) {
+    // Lấy 'lang' để dịch BottomNavBar
+    final lang = Provider.of<LanguageProvider>(context);
+
+    // Khởi tạo 'pages' ở đây
+    final List<Widget> pages = [
+      _buildFeedPage(),    
+      _buildReelsPage(),   
+      _buildMessagesPage(),
+      _buildSearchPage(),  
+      _buildProfilePage(), 
+    ];
+
     return Scaffold(
       // 1. APPBAR
       appBar: AppBar(
-        leading: IconButton( 
+        leading: IconButton(
           icon: Icon(Icons.add, size: 28, color: Colors.black),
-          onPressed: () {},
+          onPressed: () {}, // Vô hiệu hóa
         ),
-        title: Text( 
-          'AnhQuan',
+        title: Text(
+          'AnhQuan', // Giữ nguyên tên thương hiệu
           style: GoogleFonts.satisfy(
             fontSize: 32,
             fontWeight: FontWeight.bold,
-            color: Colors.black, 
+            color: Colors.black,
           ),
         ),
-        centerTitle: true, 
+        centerTitle: true,
         actions: [
-          IconButton( 
+          IconButton(
             icon: FaIcon(FontAwesomeIcons.heart, size: 24, color: Colors.black),
             onPressed: () {},
           ),
         ],
         elevation: 0,
         backgroundColor: Colors.white,
-        iconTheme: IconThemeData(color: Colors.black), 
+        iconTheme: IconThemeData(color: Colors.black),
       ),
-
+      
       // 2. BODY
       body: IndexedStack(
         index: _selectedIndex,
-        children: _pages,
+        children: pages,
       ),
-
+      
       // 3. BOTTOM NAVIGATION BAR
       bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed, 
+        type: BottomNavigationBarType.fixed,
         showSelectedLabels: false, 
         showUnselectedLabels: false, 
         iconSize: 28,
-        selectedItemColor: Colors.black, 
-        unselectedItemColor: Colors.black, 
-        currentIndex: _selectedIndex, 
-        onTap: _onItemTapped, 
+        selectedItemColor: Colors.black,
+        unselectedItemColor: Colors.black,
+        currentIndex: _selectedIndex,
+        onTap: _onItemTapped,
         items: [
           BottomNavigationBarItem(
             icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home_filled), 
-            label: 'Home',
+            activeIcon: Icon(Icons.home_filled),
+            label: lang.get('nav_home'), // Đã dịch
           ),
           BottomNavigationBarItem(
-            icon: FaIcon(FontAwesomeIcons.circlePlay, size: 24), 
-            label: 'Video',
+            icon: FaIcon(FontAwesomeIcons.circlePlay, size: 24),
+            label: lang.get('nav_reels'), // Đã dịch
           ),
           BottomNavigationBarItem(
-            icon: FaIcon(FontAwesomeIcons.paperPlane, size: 24), 
-            label: 'Messages',
+            icon: FaIcon(FontAwesomeIcons.paperPlane, size: 24),
+            label: lang.get('nav_messages'), // Đã dịch
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.search_outlined),
             activeIcon: Icon(Icons.search),
-            label: 'Search',
+            label: lang.get('nav_search'), // Đã dịch
           ),
           BottomNavigationBarItem(
             icon: CircleAvatar(
               radius: 14,
-              backgroundImage: NetworkImage('https://picsum.photos/id/1005/100/100'),
+              backgroundImage:
+                  NetworkImage('https://picsum.photos/id/1005/100/100'),
             ),
-            label: 'Profile',
+            label: lang.get('nav_profile'), // Đã dịch
           ),
         ],
       ),

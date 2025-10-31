@@ -1,10 +1,17 @@
 // lib/login_page.dart
+// BẢN HOÀN CHỈNH: ĐÃ DỊCH NÚT FACEBOOK
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; 
+import 'package:provider/provider.dart';
+
+// (Giả sử tên dự án là 'btl' và bạn đã tạo 2 file này)
+import 'package:btl/providers/language_provider.dart'; 
+import 'package:btl/l10n/app_strings.dart'; 
+
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -14,7 +21,7 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  String _selectedLanguage = 'English';
+  // Xóa '_selectedLanguage' vì Provider sẽ quản lý
   bool _isLoginMode = true;
 
   final TextEditingController _emailController = TextEditingController();
@@ -25,9 +32,9 @@ class _LoginPageState extends State<LoginPage> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   // --- HÀM XỬ LÝ LOGIC ---
+  // (Giữ nguyên toàn bộ code logic của bạn)
 
   bool _isValidEmail(String email) {
-    // RegEx chuẩn
     final RegExp emailRegex = RegExp(
       r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z]{2,})+$"
     );
@@ -37,14 +44,12 @@ class _LoginPageState extends State<LoginPage> {
   Future<void> _logIn() async {
     final scaffoldMessenger = ScaffoldMessenger.of(context);
     final email = _emailController.text.trim();
-
     if (!_isValidEmail(email)) {
       scaffoldMessenger.showSnackBar(
         const SnackBar(content: Text('Định dạng email không hợp lệ!')),
       );
       return; 
     }
-
     try {
       await _auth.signInWithEmailAndPassword(
         email: email,
@@ -58,7 +63,6 @@ class _LoginPageState extends State<LoginPage> {
       } else if (e.code == 'invalid-email') { 
         message = 'Email không hợp lệ.';
       }
-      print('Lỗi đăng nhập: $message');
       if (context.mounted) {
         scaffoldMessenger.showSnackBar(SnackBar(content: Text(message)));
       }
@@ -68,31 +72,23 @@ class _LoginPageState extends State<LoginPage> {
   Future<void> _signUp() async {
     final scaffoldMessenger = ScaffoldMessenger.of(context);
     final email = _emailController.text.trim(); 
-
     if (!_isValidEmail(email)) {
       scaffoldMessenger.showSnackBar(
         const SnackBar(content: Text('Định dạng email không hợp lệ!')),
       );
       return; 
     }
-
     if (_passwordController.text != _confirmPasswordController.text) {
       scaffoldMessenger.showSnackBar(
         const SnackBar(content: Text('Mật khẩu nhập lại không khớp!')),
       );
       return; 
     }
-
     try {
-      // 1. Tạo User trong Firebase Authentication
       UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
         email: email, 
         password: _passwordController.text.trim(),
       );
-      
-      print('Đăng ký Auth thành công: ${userCredential.user?.email}');
-
-      // 2. Lưu thông tin user vào Cloud Firestore
       if (userCredential.user != null) {
         await _firestore.collection('users').doc(userCredential.user!.uid).set({
           'uid': userCredential.user!.uid,
@@ -100,14 +96,7 @@ class _LoginPageState extends State<LoginPage> {
           'createdAt': Timestamp.now(),
           'ten': 'New User' 
         });
-        print('Đã lưu user vào Firestore database.');
       }
-      
-      // <<< ĐÃ XÓA PHẦN GỬI EMAIL XÁC THỰC >>>
-
-      // Tự động đăng nhập và chuyển trang
-      print('Đăng ký và đăng nhập thành công. Sắp chuyển trang...');
-
     } on FirebaseAuthException catch (e) {
       String message = 'Đã xảy ra lỗi';
       if (e.code == 'weak-password') {
@@ -117,7 +106,6 @@ class _LoginPageState extends State<LoginPage> {
       } else if (e.code == 'invalid-email') { 
         message = 'Email không hợp lệ.';
       }
-      print('Lỗi đăng ký: $message');
       if (context.mounted) {
         scaffoldMessenger.showSnackBar(SnackBar(content: Text(message)));
       }
@@ -142,11 +130,13 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   // --- GIAO DIỆN (UI) ---
-  // (Không thay đổi gì ở phần UI bên dưới)
 
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
+    // LẤY PROVIDER NGÔN NGỮ (listen: true)
+    final lang = Provider.of<LanguageProvider>(context);
+
     return Scaffold(
       body: SafeArea(
         child: SizedBox(
@@ -160,7 +150,9 @@ class _LoginPageState extends State<LoginPage> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   SizedBox(height: size.height * 0.05),
-                  _buildLanguageDropdown(),
+                  
+                  _buildLanguageDropdown(lang), // Sửa lại hàm này
+                  
                   const SizedBox(height: 50.0),
                   Text(
                     'AnhQuan',
@@ -171,9 +163,10 @@ class _LoginPageState extends State<LoginPage> {
 
                   AnimatedSwitcher(
                     duration: const Duration(milliseconds: 300),
+                    // Truyền 'lang' vào các hàm build form
                     child: _isLoginMode
-                        ? _buildLoginForm()   // Form Đăng nhập
-                        : _buildSignUpForm(), // Form Đăng ký
+                        ? _buildLoginForm(lang)
+                        : _buildSignUpForm(lang),
                   ),
 
                   SizedBox(height: size.height * 0.1),
@@ -187,9 +180,9 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  // --- WIDGET CON (Không thay đổi) ---
+  // --- WIDGET CON (ĐÃ SỬA ĐỂ DÙNG 'lang') ---
 
-  Widget _buildLoginForm() {
+  Widget _buildLoginForm(LanguageProvider lang) {
     return Column(
       key: ValueKey('login'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -204,21 +197,31 @@ class _LoginPageState extends State<LoginPage> {
             elevation: 0,
           ),
           icon: const Icon(FontAwesomeIcons.facebookSquare, size: 20),
-          label: const Text('Continue with Facebook', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+          // <<< SỬA LỖI Ở ĐÂY: DÙNG lang.get()
+          label: Text(
+            lang.get('continue_with_facebook'), // Đã dịch
+            style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)
+          ),
         ),
         const SizedBox(height: 30.0),
         _buildOrDivider(),
         const SizedBox(height: 30.0),
-        _buildTextField("Email", false, _emailController),
+        
+        // Dùng 'lang.get()' để lấy text
+        _buildTextField(lang.get('email_hint'), false, _emailController),
         const SizedBox(height: 12.0),
-        _buildTextField("Password", true, _passwordController),
+        _buildTextField(lang.get('password_hint'), true, _passwordController),
+        
         const SizedBox(height: 12.0),
         Align(
           alignment: Alignment.centerRight,
           child: TextButton(
             onPressed: () {},
             style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: Size.zero, tapTargetSize: MaterialTapTargetSize.shrinkWrap),
-            child: const Text('Forgot password?', style: TextStyle(color: Color(0xFF00376B), fontSize: 12.0, fontWeight: FontWeight.w500)),
+            child: Text(
+              lang.get('forgot_password'), // Đã dịch
+              style: TextStyle(color: Color(0xFF00376B), fontSize: 12.0, fontWeight: FontWeight.w500)
+            ),
           ),
         ),
         const SizedBox(height: 20.0),
@@ -231,17 +234,26 @@ class _LoginPageState extends State<LoginPage> {
             padding: const EdgeInsets.symmetric(vertical: 14.0),
             elevation: 0.0,
           ),
-          child: const Text('Log In', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+          child: Text(
+            lang.get('login_button_text'), // Đã dịch
+            style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)
+          ),
         ),
         const SizedBox(height: 30.0),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text("Don't have an account?", style: TextStyle(color: Colors.grey[600], fontSize: 13.0)),
+            Text(
+              lang.get('no_account'), // Đã dịch
+              style: TextStyle(color: Colors.grey[600], fontSize: 13.0)
+            ),
             TextButton(
               onPressed: _toggleMode, 
               style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 4.0), minimumSize: Size.zero, tapTargetSize: MaterialTapTargetSize.shrinkWrap),
-              child: const Text('Sign up', style: TextStyle(color: Color(0xFF00376B), fontWeight: FontWeight.bold, fontSize: 13.0)),
+              child: Text(
+                lang.get('sign_up'), // Đã dịch
+                style: TextStyle(color: Color(0xFF00376B), fontWeight: FontWeight.bold, fontSize: 13.0)
+              ),
             ),
           ],
         ),
@@ -249,22 +261,24 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Widget _buildSignUpForm() {
+  Widget _buildSignUpForm(LanguageProvider lang) {
     return Column(
       key: ValueKey('signup'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'Tạo tài khoản mới',
+          lang.get('create_new_account'), // Đã dịch
           textAlign: TextAlign.center,
           style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.grey[800]),
         ),
         const SizedBox(height: 30.0),
-        _buildTextField("Email", false, _emailController),
+        
+        _buildTextField(lang.get('email_hint'), false, _emailController),
         const SizedBox(height: 12.0),
-        _buildTextField("Password", true, _passwordController),
+        _buildTextField(lang.get('password_hint'), true, _passwordController),
         const SizedBox(height: 12.0),
-        _buildTextField("Confirm Password", true, _confirmPasswordController),
+        _buildTextField(lang.get('confirm_password_hint'), true, _confirmPasswordController),
+        
         const SizedBox(height: 20.0),
         ElevatedButton(
           onPressed: _signUp, 
@@ -275,17 +289,26 @@ class _LoginPageState extends State<LoginPage> {
             padding: const EdgeInsets.symmetric(vertical: 14.0),
             elevation: 0.0,
           ),
-          child: const Text('Sign Up', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+          child: Text(
+            lang.get('sign_up'), // Đã dịch
+            style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)
+          ),
         ),
         const SizedBox(height: 30.0),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text("Already have an account?", style: TextStyle(color: Colors.grey[600], fontSize: 13.0)),
+            Text(
+              lang.get('already_have_account'), // Đã dịch
+              style: TextStyle(color: Colors.grey[600], fontSize: 13.0)
+            ),
             TextButton(
               onPressed: _toggleMode, 
               style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 4.0), minimumSize: Size.zero, tapTargetSize: MaterialTapTargetSize.shrinkWrap),
-              child: const Text('Log In', style: TextStyle(color: Color(0xFF00376B), fontWeight: FontWeight.bold, fontSize: 13.0)),
+              child: Text(
+                lang.get('login_button_text'), // Đã dịch
+                style: TextStyle(color: Color(0xFF00376B), fontWeight: FontWeight.bold, fontSize: 13.0)
+              ),
             ),
           ],
         ),
@@ -293,27 +316,37 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Widget _buildLanguageDropdown() {
+  // LẬP TRÌNH LẠI HÀM NÀY ĐỂ KẾT NỐI VỚI PROVIDER
+  Widget _buildLanguageDropdown(LanguageProvider lang) {
     return Align(
       alignment: Alignment.center,
       child: DropdownButton<String>(
-        value: _selectedLanguage,
+        value: lang.locale.languageCode, // Lấy 'vi' hoặc 'en' từ provider
         icon: const Icon(Icons.keyboard_arrow_down, color: Colors.grey),
-        // ... (style) ...
-        items: <String>['English', 'Tiếng Việt']
+        underline: Container(), // Ẩn gạch chân
+        items: <String>['vi', 'en'] // Giá trị thực
             .map<DropdownMenuItem<String>>((String value) {
           return DropdownMenuItem<String>(
             value: value,
-            child: Text(value, style: const TextStyle(color: Colors.grey)),
+            // Hiển thị text 'Tiếng Việt' hoặc 'English'
+            // Lấy từ file AppStrings (cần import)
+            child: Text(
+              value == 'vi' ? AppStrings.vi['language_name']! : AppStrings.en['language_name']!,
+              style: const TextStyle(color: Colors.grey),
+            ),
           );
         }).toList(),
         onChanged: (String? newValue) {
-          setState(() { _selectedLanguage = newValue!; });
+          if (newValue == null) return;
+          // Gọi hàm setLanguage trong provider
+          Provider.of<LanguageProvider>(context, listen: false)
+              .setLanguage(Locale(newValue));
         },
       ),
     );
   }
 
+  // (Các hàm build UI phụ trợ này được giữ nguyên từ code của bạn)
   Widget _buildFooter() {
     return Column(
       children: [
