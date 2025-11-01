@@ -1,16 +1,21 @@
 // lib/pages/story_view_page.dart
-// BẢN NÂNG CẤP: PHÁT NHẠC
+// BẢN CẬP NHẬT: DÙNG CHỮ ĐẦY ĐỦ (ngày, giờ, hour, day)
 
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart'; 
-import 'package:audioplayers/audioplayers.dart'; // <<< THÊM IMPORT AUDIOPLAYERS
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:audioplayers/audioplayers.dart'; 
+import 'package:provider/provider.dart'; 
+
+// (Sửa 'btl' nếu tên dự án bạn khác)
+import 'package:btl/providers/language_provider.dart'; 
 
 class StoryViewPage extends StatefulWidget {
   final String username;
   final String imageUrl;
   final String storyId; 
   final bool initialIsLiked;
-  final String? musicUrl; // <<< THÊM 1: Nhận musicUrl
+  final String? musicUrl; 
+  final Timestamp? timestamp; 
 
   const StoryViewPage({
     super.key,
@@ -18,7 +23,8 @@ class StoryViewPage extends StatefulWidget {
     required this.imageUrl,
     required this.storyId, 
     required this.initialIsLiked,
-    this.musicUrl, // <<< THÊM 2: Thêm vào constructor
+    this.musicUrl,
+    this.timestamp, 
   });
 
   @override
@@ -29,8 +35,6 @@ class _StoryViewPageState extends State<StoryViewPage>
     with SingleTickerProviderStateMixin {
   late AnimationController _progressController;
   late bool _isLiked;
-  
-  // <<< THÊM 3: Tạo một trình phát âm thanh
   final AudioPlayer _audioPlayer = AudioPlayer();
 
   @override
@@ -49,18 +53,14 @@ class _StoryViewPageState extends State<StoryViewPage>
       }
     });
     
-    // <<< THÊM 4: Bật nhạc khi story bắt đầu
     _playMusic();
-    
     _progressController.forward();
   }
 
-  // <<< THÊM 5: Hàm bật nhạc
   void _playMusic() {
-    // Chỉ bật nếu link nhạc tồn tại
     if (widget.musicUrl != null && widget.musicUrl!.isNotEmpty) {
       try {
-        _audioPlayer.setReleaseMode(ReleaseMode.stop); // Dừng hẳn khi stop
+        _audioPlayer.setReleaseMode(ReleaseMode.stop);
         _audioPlayer.play(UrlSource(widget.musicUrl!));
       } catch (e) {
         print('Lỗi phát nhạc: $e');
@@ -68,35 +68,23 @@ class _StoryViewPageState extends State<StoryViewPage>
     }
   }
 
-
   @override
   void dispose() {
     _progressController.dispose();
-    
-    // <<< THÊM 6: Tắt nhạc và giải phóng tài nguyên khi đóng story
     _audioPlayer.stop();
     _audioPlayer.dispose();
-    
     super.dispose();
   }
   
-  // Hàm xử lý tim (cập nhật lên Firebase)
   void _onLikePressed() {
-    // 1. Cập nhật UI ngay lập tức
-    setState(() {
-      _isLiked = !_isLiked;
-    });
+    setState(() { _isLiked = !_isLiked; });
     
-    // 2. Cập nhật lên Firebase
-    // (Dùng tên collection 'storys' của bạn)
     FirebaseFirestore.instance
-      .collection('storys') 
-      .doc(widget.storyId) // Dùng ID của story
-      .update({
-        'isLiked': _isLiked // Gửi trạng thái mới lên
-      }).catchError((e) {
+      .collection('storys') // (Dùng tên collection 'storys' của bạn)
+      .doc(widget.storyId) 
+      .update({'isLiked': _isLiked})
+      .catchError((e) {
         print('Lỗi cập nhật tim story: $e');
-        // Nếu lỗi, đảo ngược lại trạng thái
         if (mounted) {
           setState(() {
             _isLiked = !_isLiked;
@@ -105,6 +93,23 @@ class _StoryViewPageState extends State<StoryViewPage>
       });
   }
 
+  // <<< ĐÂY LÀ HÀM ĐÚNG (DÙNG CHỮ ĐẦY ĐỦ)
+  String _formatTimestamp(BuildContext context, Timestamp? timestamp) {
+    if (timestamp == null) return ''; 
+
+    final lang = Provider.of<LanguageProvider>(context, listen: false);
+    final diff = DateTime.now().difference(timestamp.toDate());
+
+    if (diff.inDays > 0) {
+      return '${diff.inDays} ${lang.get('days_ago')}'; // "2 day" hoặc "2 ngày"
+    } else if (diff.inHours > 0) {
+      return '${diff.inHours} ${lang.get('hours_ago')}'; // "2 hour" hoặc "2 giờ"
+    } else if (diff.inMinutes > 0) {
+      return '${diff.inMinutes} ${lang.get('minutes_ago')}'; // "2 minute" hoặc "2 phút"
+    } else {
+      return lang.get('just_now'); // 'Vừa xong'
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -141,7 +146,7 @@ class _StoryViewPageState extends State<StoryViewPage>
               child: Column(
                 children: [
                   _buildProgressBar(),
-                  _buildHeader(context),
+                  _buildHeader(context), 
                   const Spacer(),
                   _buildFooter(),
                 ],
@@ -153,7 +158,8 @@ class _StoryViewPageState extends State<StoryViewPage>
     );
   }
 
-  // (Các hàm build UI con)
+  // --- CÁC HÀM BUILD UI CON (ĐẦY ĐỦ) ---
+
   Widget _buildProgressBar() {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 8.0),
@@ -178,7 +184,13 @@ class _StoryViewPageState extends State<StoryViewPage>
           const SizedBox(width: 10),
           Text(widget.username, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
           const SizedBox(width: 8),
-          Text("1h", style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 15)),
+          
+          // Dùng hàm _formatTimestamp
+          Text(
+            _formatTimestamp(context, widget.timestamp), 
+            style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 15)
+          ),
+
           const Spacer(), 
           IconButton(icon: const Icon(Icons.more_horiz, color: Colors.white), onPressed: () {}),
           IconButton(
@@ -209,7 +221,7 @@ class _StoryViewPageState extends State<StoryViewPage>
                 child: TextField(
                   style: const TextStyle(color: Colors.white),
                   decoration: InputDecoration(
-                    hintText: 'Gửi tin nhắn...',
+                    hintText: 'Gửi tin nhắn...', 
                     hintStyle: TextStyle(color: Colors.white.withOpacity(0.9)),
                     border: InputBorder.none,
                   ),
@@ -224,7 +236,7 @@ class _StoryViewPageState extends State<StoryViewPage>
               color: _isLiked ? Colors.red : Colors.white,
               size: 30,
             ),
-            onPressed: _onLikePressed, // <<< Gọi hàm xử lý tim
+            onPressed: _onLikePressed,
           ),
           IconButton(
             icon: Transform.rotate(

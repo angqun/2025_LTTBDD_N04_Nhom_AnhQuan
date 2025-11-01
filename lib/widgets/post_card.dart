@@ -1,14 +1,17 @@
 // lib/widgets/post_card.dart
-// BẢN SỬA LỖI: Chuyển lại thành STATELESS và nhận dữ liệu từ cha
+// BẢN HOÀN CHỈNH: TỰ ĐỘNG DỊCH CAPTION VÀ HIỂN THỊ SỐ LIỆU
 
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:btl/pages/post_model.dart'; // <-- Import model của bạn
+import 'package:provider/provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // Cần cho Timestamp
+
+// (Sửa 'btl' nếu tên dự án của bạn khác)
+import 'package:btl/pages/post_model.dart'; 
+import 'package:btl/providers/language_provider.dart'; 
 
 class PostCard extends StatelessWidget {
-  // THAY ĐỔI 1: Nhận dữ liệu từ cha
   final Post post;
-  // THAY ĐỔI 2: Nhận một hàm callback (hàm gọi ngược) từ cha
   final VoidCallback onLikeToggle;
   final VoidCallback onBookmarkToggle;
   final VoidCallback onCommentPressed;
@@ -23,27 +26,78 @@ class PostCard extends StatelessWidget {
     required this.onSendPressed,
   });
 
+  // --- HÀM HỖ TRỢ ---
+
+  // Hàm đổi Timestamp thành "1 ngày trước", "2 giờ trước"...
+  String _formatTimestamp(BuildContext context, Timestamp? timestamp) {
+    if (timestamp == null) return ''; // Trả về rỗng nếu không có data
+
+    // Lấy provider ngôn ngữ (không cần 'listen')
+    final lang = Provider.of<LanguageProvider>(context, listen: false);
+    final diff = DateTime.now().difference(timestamp.toDate());
+
+    if (diff.inDays > 0) {
+      return '${diff.inDays} ${lang.get('days_ago')}';
+    } else if (diff.inHours > 0) {
+      return '${diff.inHours} ${lang.get('hours_ago')}';
+    } else if (diff.inMinutes > 0) {
+      return '${diff.inMinutes} ${lang.get('minutes_ago')}';
+    } else {
+      return lang.get('just_now');
+    }
+  }
+
+  // Hàm tái sử dụng để vẽ "Icon + Số đếm"
+  Widget _buildIconWithCount(
+    IconData icon, 
+    String count, 
+    VoidCallback onPressed, 
+    Color iconColor,
+    {double iconSize = 24}
+  ) {
+    return Row(
+      children: [
+        IconButton(
+          icon: FaIcon(icon, color: iconColor, size: iconSize),
+          onPressed: onPressed,
+        ),
+        // Chỉ hiển thị số nếu nó khác '0'
+        if (count != '0' && count.isNotEmpty)
+          Text(
+            count,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+          ),
+        SizedBox(width: 8), // Khoảng cách giữa các cụm
+      ],
+    );
+  }
+
+
+  // --- HÀM BUILD CHÍNH ---
   @override
   Widget build(BuildContext context) {
+    // Lấy màu icon mặc định (tự động đổi Sáng/Tối)
     final Color iconColor = Theme.of(context).iconTheme.color ?? Colors.black;
+    // Lấy provider ngôn ngữ (để 'listen' và tự động đổi caption)
+    final lang = Provider.of<LanguageProvider>(context);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 15.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 1. HEADER
+          // 1. HEADER (Avatar, Tên, Nút ...)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 10.0),
             child: Row(
               children: [
                 CircleAvatar(
                   radius: 18,
-                  backgroundImage: NetworkImage(post.avatarUrl), // <-- Dùng data
+                  backgroundImage: NetworkImage(post.avatarUrl),
                 ),
                 SizedBox(width: 10),
                 Text(
-                  post.username, // <-- Dùng data
+                  post.username,
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 Spacer(),
@@ -55,76 +109,117 @@ class PostCard extends StatelessWidget {
             ),
           ),
 
-          // 2. IMAGE
+          // 2. IMAGE (Ảnh bài đăng)
           Image.network(
-            post.imageUrl, // <-- Dùng data
+            post.imageUrl, 
             width: double.infinity,
             height: 400,
             fit: BoxFit.cover,
+            // (Thêm loading/error builder nếu muốn)
+            loadingBuilder: (context, child, loadingProgress) {
+              if (loadingProgress == null) return child;
+              return Container(
+                height: 400,
+                child: Center(child: CircularProgressIndicator(strokeWidth: 2))
+              );
+            },
+            errorBuilder: (context, error, stackTrace) {
+              return Container(
+                height: 400,
+                color: Colors.grey[200],
+                child: Center(child: Icon(Icons.error_outline, color: Colors.grey[400]))
+              );
+            },
           ),
 
-          // 3. CÁC NÚT TƯƠNG TÁC
+          // 3. HÀNG NÚT BẤM (ĐÃ CẬP NHẬT)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 0.0, vertical: 4.0),
             child: Row(
               children: [
-                // THAY ĐỔI 3: Dùng trạng thái và hàm từ cha
-                IconButton(
-                  icon: FaIcon(
-                    post.isLiked // <-- Dùng data
-                        ? FontAwesomeIcons.solidHeart
-                        : FontAwesomeIcons.heart,
-                    color: post.isLiked ? Colors.red : iconColor, // <-- Dùng data
-                    size: 24,
-                  ),
-                  onPressed: onLikeToggle, // <-- Gọi hàm của cha
+                // Tim + Lượt thích
+                _buildIconWithCount(
+                  post.isLiked ? FontAwesomeIcons.solidHeart : FontAwesomeIcons.heart,
+                  post.likeCount,
+                  onLikeToggle,
+                  post.isLiked ? Colors.red : iconColor,
                 ),
-                IconButton(
-                  icon: FaIcon(FontAwesomeIcons.comment, size: 24),
-                  onPressed: onCommentPressed, // <-- Gọi hàm của cha
+                
+                // Comment + Số comment
+                _buildIconWithCount(
+                  FontAwesomeIcons.comment,
+                  post.commentCount,
+                  onCommentPressed,
+                  iconColor,
                 ),
-                IconButton(
-                  icon: FaIcon(FontAwesomeIcons.paperPlane, size: 24),
-                  onPressed: onSendPressed, // <-- Gọi hàm của cha
+                
+                // Repost + Số repost
+                _buildIconWithCount(
+                  FontAwesomeIcons.retweet, // Icon đăng lại
+                  post.repostCount, // Lấy từ data
+                  () { print('Nút Repost được nhấn!'); }, // (Hàm xử lý)
+                  iconColor,
                 ),
+                
+                // Send + Số send
+                _buildIconWithCount(
+                  FontAwesomeIcons.paperPlane,
+                  post.sendCount,
+                  onSendPressed,
+                  iconColor,
+                  iconSize: 22,
+                ),
+                
                 Spacer(),
+                
+                // Nút Bookmark
                 IconButton(
                   icon: FaIcon(
-                    post.isBookmarked // <-- Dùng data
+                    post.isBookmarked
                         ? FontAwesomeIcons.solidBookmark
                         : FontAwesomeIcons.bookmark,
                     size: 24,
+                    color: iconColor,
                   ),
-                  onPressed: onBookmarkToggle, // <-- Gọi hàm của cha
+                  onPressed: onBookmarkToggle,
                 ),
               ],
             ),
           ),
 
-          // 4. LƯỢT THÍCH VÀ BÌNH LUẬN
+          // 4. CAPTION VÀ METADATA (ĐÃ CẬP NHẬT)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  post.likeCount, // <-- Dùng data
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                SizedBox(height: 5),
+                // CAPTION TỰ ĐỘNG DỊCH
                 RichText(
+                  maxLines: 2, 
+                  overflow: TextOverflow.ellipsis, 
                   text: TextSpan(
                     style: DefaultTextStyle.of(context).style,
                     children: [
                       TextSpan(
-                        text: '${post.username} ', // <-- Dùng data
+                        text: '${post.username} ',
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
                       TextSpan(
-                        text: post.caption, // <-- Dùng data
+                        // Lô-gic: Nếu ngôn ngữ là 'vi', dùng caption_vi
+                        // ngược lại, dùng caption_en
+                        text: (lang.locale.languageCode == 'vi')
+                            ? post.caption_vi
+                            : post.caption_en,
                       ),
                     ],
                   ),
+                ),
+                SizedBox(height: 5),
+
+                // METADATA (ĐÃ XÓA NÚT "XEM BẢN DỊCH")
+                Text(
+                  _formatTimestamp(context, post.timestamp), // "1 ngày trước"
+                  style: TextStyle(color: Colors.grey, fontSize: 12),
                 ),
               ],
             ),

@@ -1,5 +1,5 @@
 // lib/pages/story_model.dart
-// BẢN CẬP NHẬT: THÊM musicUrl
+// BẢN CẬP NHẬT: ĐÃ THÊM 'timestamp'
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -9,7 +9,8 @@ class Story {
   final String avatarUrl;
   final String storyImageUrl;
   bool isLiked;
-  final String? musicUrl; // <<< THÊM DÒNG NÀY (dấu ? nghĩa là có thể null)
+  final String? musicUrl; 
+  final Timestamp? timestamp; // <<< THÊM DÒNG NÀY
 
   Story({
     required this.id,
@@ -17,9 +18,11 @@ class Story {
     required this.avatarUrl,
     required this.storyImageUrl,
     this.isLiked = false,
-    this.musicUrl, // <<< THÊM DÒNG NÀY
+    this.musicUrl,
+    this.timestamp, // <<< THÊM DÒNG NÀY
   });
 
+  // Hàm để đọc dữ liệu từ Firestore
   factory Story.fromFirestore(DocumentSnapshot doc) {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
     return Story(
@@ -28,7 +31,8 @@ class Story {
       avatarUrl: data['avatarUrl'] ?? '',
       storyImageUrl: data['storyImageUrl'] ?? '',
       isLiked: data['isLiked'] ?? false,
-      musicUrl: data['musicUrl'], // <<< THÊM DÒNG NÀY (sẽ là null nếu không có)
+      musicUrl: data['musicUrl'], 
+      timestamp: data['timestamp'], // <<< THÊM DÒNG NÀY
     );
   }
 }

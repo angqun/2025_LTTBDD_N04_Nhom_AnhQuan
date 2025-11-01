@@ -1,5 +1,5 @@
 // lib/home_screen.dart
-// BẢN HOÀN CHỈNH: ĐÃ TÁCH FEED_PAGE VÀ STORY_BAR
+// BẢN HOÀN CHỈNH: ĐÃ SỬA LỖI ANR (TẢI NỀN)
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -8,12 +8,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; 
 import 'package:provider/provider.dart'; 
 
-// ----- CÁC DÒNG IMPORT MỚI (ĐÃ TÁI CẤU TRÚC) -----
 // (Sửa 'btl' nếu tên dự án bạn khác)
 import 'package:btl/providers/language_provider.dart'; 
-import 'package:btl/pages/feed_page.dart';    // <<< FILE CON 1
-import 'package:btl/widgets/story_bar.dart'; // <<< FILE CON 2
-// ---------------------------------------------
+import 'package:btl/pages/feed_page.dart';    
+import 'package:btl/widgets/story_bar.dart'; 
+import 'package:btl/pages/reels_page.dart';
 
 
 class HomeScreen extends StatefulWidget {
@@ -25,25 +24,20 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   // --- Các biến trạng thái và dịch vụ ("Bộ não") ---
   
-  // Firebase services
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final CollectionReference _postsCollection =
       FirebaseFirestore.instance.collection('posts');
   final CollectionReference _storiesCollection =
-      FirebaseFirestore.instance.collection('storys'); // (Giữ tên 'storys' của bạn)
+      FirebaseFirestore.instance.collection('storys'); 
 
-  // Trạng thái điều hướng
   int _selectedIndex = 0;
   
-  // Biến để "giữ" widget story (sửa lỗi nháy)
   late final Widget _storyBarWidget;
 
   
   @override
   void initState() {
     super.initState();
-    // Khởi tạo widget story 1 LẦN DUY NHẤT
-    // và truyền collection 'storys' cho nó
     _storyBarWidget = StoryBar(storiesCollection: _storiesCollection);
   }
   
@@ -92,15 +86,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   
   // --- CÁC WIDGET CHO TỪNG TRANG CON ---
-
-  // (Hàm _buildStoryBar() đã bị XÓA và chuyển đi)
   
-  // Page 0: Trang Feed (Giờ rất "nhẹ")
+  // Page 0: Trang Feed
   Widget _buildFeedPage() {
-    // Chỉ cần gọi FeedPage và "truyền" các hàm logic cho nó
-    
     return FeedPage(
-      storyBar: _storyBarWidget, // Truyền widget story đã được build
+      storyBar: _storyBarWidget,
       postsCollection: _postsCollection,
       onLikeToggle: _onLikeToggle,
       onBookmarkToggle: _onBookmarkToggle,
@@ -109,25 +99,29 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // Page 1: Reels (Đã dịch)
+  // <<< SỬA LỖI ANR Ở ĐÂY
+  // Page 1: Reels
   Widget _buildReelsPage() {
-    final lang = Provider.of<LanguageProvider>(context, listen: false);
-    return Center(child: Text(lang.get('reels_page_title')));
+    // Truyền 'isTabActive' xuống cho con
+    // Nó chỉ 'true' KHI _selectedIndex == 1
+    return ReelsPage(
+      isTabActive: (_selectedIndex == 1),
+    );
   }
   
-  // Page 2: Messages (Đã dịch)
+  // Page 2: Messages
   Widget _buildMessagesPage() {
     final lang = Provider.of<LanguageProvider>(context, listen: false);
     return Center(child: Text(lang.get('messages_page_title')));
   }
   
-  // Page 3: Search (Đã dịch)
+  // Page 3: Search
   Widget _buildSearchPage() {
     final lang = Provider.of<LanguageProvider>(context, listen: false);
     return Center(child: Text(lang.get('search_page_title')));
   }
   
-  // Page 4: Profile (Đã dịch)
+  // Page 4: Profile
   Widget _buildProfilePage() {
     final lang = Provider.of<LanguageProvider>(context);
     final user = _auth.currentUser;
@@ -144,13 +138,13 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           SizedBox(height: 20),
           Text(
-            lang.get('logged_in_as'), // Đã dịch
+            lang.get('logged_in_as'), 
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 16, color: Colors.grey[700]),
           ),
           SizedBox(height: 8),
           Text(
-            user?.email ?? lang.get('email_not_found'), // Đã dịch
+            user?.email ?? lang.get('email_not_found'), 
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
@@ -162,7 +156,7 @@ class _HomeScreenState extends State<HomeScreen> {
               padding: const EdgeInsets.symmetric(vertical: 12),
             ),
             onPressed: () => _logOut(context),
-            child: Text(lang.get('log_out'), style: TextStyle(fontSize: 16)), // Đã dịch
+            child: Text(lang.get('log_out'), style: TextStyle(fontSize: 16)),
           ),
         ],
       ),
@@ -172,7 +166,6 @@ class _HomeScreenState extends State<HomeScreen> {
   // --- HÀM BUILD CHÍNH ---
   @override
   Widget build(BuildContext context) {
-    // Lấy 'lang' để dịch BottomNavBar
     final lang = Provider.of<LanguageProvider>(context);
 
     // Khởi tạo 'pages' ở đây
@@ -186,30 +179,32 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       // 1. APPBAR
-      appBar: AppBar(
-        leading: IconButton(
-          icon: Icon(Icons.add, size: 28, color: Colors.black),
-          onPressed: () {}, // Vô hiệu hóa
-        ),
-        title: Text(
-          'AnhQuan', // Giữ nguyên tên thương hiệu
-          style: GoogleFonts.satisfy(
-            fontSize: 32,
-            fontWeight: FontWeight.bold,
-            color: Colors.black,
-          ),
-        ),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: FaIcon(FontAwesomeIcons.heart, size: 24, color: Colors.black),
-            onPressed: () {},
-          ),
-        ],
-        elevation: 0,
-        backgroundColor: Colors.white,
-        iconTheme: IconThemeData(color: Colors.black),
-      ),
+      appBar: _selectedIndex == 1 
+          ? null 
+          : AppBar(
+              leading: IconButton(
+                icon: Icon(Icons.add, size: 28, color: Colors.black),
+                onPressed: () {}, // Vô hiệu hóa
+              ),
+              title: Text(
+                'AnhQuan', 
+                style: GoogleFonts.satisfy(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
+              ),
+              centerTitle: true,
+              actions: [
+                IconButton(
+                  icon: FaIcon(FontAwesomeIcons.heart, size: 24, color: Colors.black),
+                  onPressed: () {},
+                ),
+              ],
+              elevation: 0,
+              backgroundColor: Colors.white,
+              iconTheme: IconThemeData(color: Colors.black),
+            ),
       
       // 2. BODY
       body: IndexedStack(
@@ -223,28 +218,32 @@ class _HomeScreenState extends State<HomeScreen> {
         showSelectedLabels: false, 
         showUnselectedLabels: false, 
         iconSize: 28,
-        selectedItemColor: Colors.black,
-        unselectedItemColor: Colors.black,
+        
+        backgroundColor: _selectedIndex == 1 ? Colors.black : Colors.white,
+        selectedItemColor: _selectedIndex == 1 ? Colors.white : Colors.black,
+        unselectedItemColor: _selectedIndex == 1 ? Colors.white : Colors.black,
+
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
         items: [
           BottomNavigationBarItem(
             icon: Icon(Icons.home_outlined),
             activeIcon: Icon(Icons.home_filled),
-            label: lang.get('nav_home'), // Đã dịch
+            label: lang.get('nav_home'), 
           ),
           BottomNavigationBarItem(
             icon: FaIcon(FontAwesomeIcons.circlePlay, size: 24),
-            label: lang.get('nav_reels'), // Đã dịch
+            activeIcon: FaIcon(FontAwesomeIcons.solidCirclePlay, size: 24),
+            label: lang.get('nav_reels'), 
           ),
           BottomNavigationBarItem(
             icon: FaIcon(FontAwesomeIcons.paperPlane, size: 24),
-            label: lang.get('nav_messages'), // Đã dịch
+            label: lang.get('nav_messages'), 
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.search_outlined),
             activeIcon: Icon(Icons.search),
-            label: lang.get('nav_search'), // Đã dịch
+            label: lang.get('nav_search'), 
           ),
           BottomNavigationBarItem(
             icon: CircleAvatar(
@@ -252,7 +251,7 @@ class _HomeScreenState extends State<HomeScreen> {
               backgroundImage:
                   NetworkImage('https://picsum.photos/id/1005/100/100'),
             ),
-            label: lang.get('nav_profile'), // Đã dịch
+            label: lang.get('nav_profile'), 
           ),
         ],
       ),

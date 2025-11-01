@@ -1,12 +1,12 @@
 // lib/l10n/app_strings.dart
-// BẢN CẬP NHẬT: Thêm key cho nút Facebook
+// BẢN HOÀN CHỈNH (Đã bao gồm Login, Home, Post, Story, Reels)
 
 class AppStrings {
   // Bản dịch tiếng Việt (vi)
   static const Map<String, String> vi = {
     // Login Page
     'language_name': 'Tiếng Việt',
-    'continue_with_facebook': 'Tiếp tục với Facebook', // <<< DÒNG MỚI
+    'continue_with_facebook': 'Tiếp tục với Facebook',
     'login_button_text': 'Đăng nhập',
     'email_hint': 'Email',
     'password_hint': 'Mật khẩu',
@@ -17,14 +17,18 @@ class AppStrings {
     'confirm_password_hint': 'Xác nhận Mật khẩu',
     'already_have_account': 'Bạn đã có tài khoản?',
 
-    // Home Page
+    // Home Page & Feed
     'loading_posts_error': 'Lỗi tải bài đăng: ',
     'no_posts_available': 'Không có bài đăng nào.',
     'loading_story_error': 'Lỗi tải story',
     'your_story': 'Tin của bạn',
+
+    // Tab Pages
     'reels_page_title': 'Trang Video/Reels',
     'messages_page_title': 'Trang Tin nhắn',
     'search_page_title': 'Trang Tìm kiếm',
+
+    // Profile Page
     'logged_in_as': 'Đã đăng nhập với email:',
     'email_not_found': 'Không tìm thấy email',
     'log_out': 'Đăng xuất',
@@ -35,13 +39,25 @@ class AppStrings {
     'nav_messages': 'Tin nhắn',
     'nav_search': 'Tìm kiếm',
     'nav_profile': 'Cá nhân',
+    
+    // PostCard Metadata (Chữ đầy đủ)
+    'see_translation': 'Xem bản dịch',
+    'days_ago': 'ngày',
+    'hours_ago': 'giờ',
+    'minutes_ago': 'phút',
+    'just_now': 'Vừa xong',
+
+    // Reels Page
+    'reels_tab_reels': 'Reels',
+    'reels_tab_friends': 'Bạn bè',
+    'follow': 'Theo dõi',
   };
 
   // Bản dịch tiếng Anh (en)
   static const Map<String, String> en = {
     // Login Page
     'language_name': 'English',
-    'continue_with_facebook': 'Continue with Facebook', // <<< DÒNG MỚI
+    'continue_with_facebook': 'Continue with Facebook',
     'login_button_text': 'Log In',
     'email_hint': 'Email',
     'password_hint': 'Password',
@@ -52,14 +68,18 @@ class AppStrings {
     'confirm_password_hint': 'Confirm Password',
     'already_have_account': 'Already have an account?',
     
-    // Home Page
+    // Home Page & Feed
     'loading_posts_error': 'Error loading posts: ',
     'no_posts_available': 'No posts available.',
     'loading_story_error': 'Error loading stories',
     'your_story': 'Your Story',
+
+    // Tab Pages
     'reels_page_title': 'Reels Page',
     'messages_page_title': 'Messages Page',
     'search_page_title': 'Search Page',
+
+    // Profile Page
     'logged_in_as': 'Logged in as:',
     'email_not_found': 'Email not found',
     'log_out': 'Log Out',
@@ -70,5 +90,17 @@ class AppStrings {
     'nav_messages': 'Messages',
     'nav_search': 'Search',
     'nav_profile': 'Profile',
+
+    // PostCard Metadata (Chữ đầy đủ)
+    'see_translation': 'See translation',
+    'days_ago': 'day',
+    'hours_ago': 'hour',
+    'minutes_ago': 'minute',
+    'just_now': 'Just now',
+
+    // Reels Page
+    'reels_tab_reels': 'Reels',
+    'reels_tab_friends': 'Friends',
+    'follow': 'Follow',
   };
 }

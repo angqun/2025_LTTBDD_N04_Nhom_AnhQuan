@@ -1,5 +1,5 @@
 // lib/widgets/story_bar.dart
-// WIDGET NÀY CHỈ CHỊU TRÁCH NHIỆM CHO THANH STORY
+// BẢN CẬP NHẬT: TRUYỀN TIMESTAMP SANG STORYVIEWPAGE
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -13,7 +13,6 @@ import 'package:btl/widgets/story_bubble.dart';
 
 
 class StoryBar extends StatelessWidget {
-  // Nhận collection 'storys' từ HomeScreen
   final CollectionReference storiesCollection;
 
   const StoryBar({
@@ -23,20 +22,15 @@ class StoryBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Đây chính là code _buildStoryBar() cũ của bạn
-    
     return Container(
       height: 110,
       child: StreamBuilder<QuerySnapshot>( 
-        stream: storiesCollection.snapshots(), // Dùng collection được truyền vào
+        stream: storiesCollection.snapshots(),
         builder: (context, storySnapshot) {
           
-          // Lấy 'lang' provider để dịch
           final lang = Provider.of<LanguageProvider>(context);
 
           if (storySnapshot.hasError) return Center(child: Text(lang.get('loading_story_error')));
-          
-          // (Không cần vòng xoay loading, vì widget này được build 1 lần)
           
           final storyDocs = storySnapshot.data?.docs ?? []; 
           
@@ -70,7 +64,7 @@ class StoryBar extends StatelessWidget {
                           ],
                         ),
                         SizedBox(height: 5),
-                        Text(lang.get('your_story'), style: TextStyle(fontSize: 12)) // Đã dịch
+                        Text(lang.get('your_story'), style: TextStyle(fontSize: 12)) 
                       ],
                     ),
                   ),
@@ -91,7 +85,8 @@ class StoryBar extends StatelessWidget {
                         imageUrl: story.storyImageUrl,
                         storyId: story.id, 
                         initialIsLiked: story.isLiked, 
-                        musicUrl: story.musicUrl, // Truyền link nhạc
+                        musicUrl: story.musicUrl,
+                        timestamp: story.timestamp, // <<< THÊM DÒNG NÀY
                       ),
                     ),
                   );
