@@ -1,5 +1,5 @@
 // lib/l10n/app_strings.dart
-// BẢN HOÀN CHỈNH (Đã bao gồm Login, Home, Post, Story, Reels)
+// BẢN CẬP NHẬT: Thêm key cho Tab Tin nhắn
 
 class AppStrings {
   // Bản dịch tiếng Việt (vi)
@@ -40,7 +40,7 @@ class AppStrings {
     'nav_search': 'Tìm kiếm',
     'nav_profile': 'Cá nhân',
     
-    // PostCard Metadata (Chữ đầy đủ)
+    // PostCard Metadata
     'see_translation': 'Xem bản dịch',
     'days_ago': 'ngày',
     'hours_ago': 'giờ',
@@ -51,6 +51,15 @@ class AppStrings {
     'reels_tab_reels': 'Reels',
     'reels_tab_friends': 'Bạn bè',
     'follow': 'Theo dõi',
+
+    // <<< CÁC DÒNG MỚI CHO TAB TIN NHẮN
+    'meta_search_hint': 'Hỏi Meta AI hoặc tìm kiếm',
+    'your_note': 'Ghi chú của bạn',
+    'location_sharing_off': 'Tắt chia sẻ vị trí',
+    'map': 'Bản đồ',
+    'pending_messages': 'Tin nhắn đang chờ',
+    'no_messages': 'Không có tin nhắn nào.',
+    'send_message': 'Gửi tin nhắn...', // (Cái này cho Story View)
   };
 
   // Bản dịch tiếng Anh (en)
@@ -91,7 +100,7 @@ class AppStrings {
     'nav_search': 'Search',
     'nav_profile': 'Profile',
 
-    // PostCard Metadata (Chữ đầy đủ)
+    // PostCard Metadata
     'see_translation': 'See translation',
     'days_ago': 'day',
     'hours_ago': 'hour',
@@ -102,5 +111,14 @@ class AppStrings {
     'reels_tab_reels': 'Reels',
     'reels_tab_friends': 'Friends',
     'follow': 'Follow',
+
+    // <<< CÁC DÒNG MỚI CHO TAB TIN NHẮN
+    'meta_search_hint': 'Ask Meta AI or search',
+    'your_note': 'Your note',
+    'location_sharing_off': 'Location sharing off',
+    'map': 'Map',
+    'pending_messages': 'Pending messages',
+    'no_messages': 'No messages.',
+    'send_message': 'Send message...', // (Cái này cho Story View)
   };
 }
