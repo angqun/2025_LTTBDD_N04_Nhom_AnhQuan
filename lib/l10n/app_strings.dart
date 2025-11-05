@@ -1,5 +1,5 @@
 // lib/l10n/app_strings.dart
-// BẢN CẬP NHẬT: Thêm key cho Tab Tin nhắn
+// BẢN HOÀN CHỈNH (Đã bao gồm Login, Home, Post, Story, Reels, Messages)
 
 class AppStrings {
   // Bản dịch tiếng Việt (vi)
@@ -40,7 +40,7 @@ class AppStrings {
     'nav_search': 'Tìm kiếm',
     'nav_profile': 'Cá nhân',
     
-    // PostCard Metadata
+    // PostCard & StoryView Metadata (Chữ đầy đủ)
     'see_translation': 'Xem bản dịch',
     'days_ago': 'ngày',
     'hours_ago': 'giờ',
@@ -52,14 +52,28 @@ class AppStrings {
     'reels_tab_friends': 'Bạn bè',
     'follow': 'Theo dõi',
 
-    // <<< CÁC DÒNG MỚI CHO TAB TIN NHẮN
+    // Messages Page
     'meta_search_hint': 'Hỏi Meta AI hoặc tìm kiếm',
     'your_note': 'Ghi chú của bạn',
     'location_sharing_off': 'Tắt chia sẻ vị trí',
     'map': 'Bản đồ',
     'pending_messages': 'Tin nhắn đang chờ',
     'no_messages': 'Không có tin nhắn nào.',
-    'send_message': 'Gửi tin nhắn...', // (Cái này cho Story View)
+    'new_messages': 'tin nhắn mới', // ví dụ: "2 tin nhắn mới"
+    'status_seen_last_week': 'Đã xem tuần trước',
+    'status_sent': 'Đã gửi',
+    'status_message_unavailable': 'Tin nhắn không còn nữa',
+    'search': 'Tìm kiếm',
+    'cancel': 'Hủy',
+    'recent': 'Gần đây',
+    'see_all': 'Xem tất cả',
+    'no_results_found': 'Không tìm thấy kết quả.',
+    'clear_all': 'Xóa tất cả',
+    'profile_posts': 'bài viết',
+    'profile_followers': 'người theo dõi',
+    'profile_following': 'đang theo dõi',
+    'profile_edit': 'Chỉnh sửa',
+    'profile_share': 'Chia sẻ trang cá nhân',
   };
 
   // Bản dịch tiếng Anh (en)
@@ -100,7 +114,7 @@ class AppStrings {
     'nav_search': 'Search',
     'nav_profile': 'Profile',
 
-    // PostCard Metadata
+    // PostCard & StoryView Metadata (Chữ đầy đủ)
     'see_translation': 'See translation',
     'days_ago': 'day',
     'hours_ago': 'hour',
@@ -112,13 +126,29 @@ class AppStrings {
     'reels_tab_friends': 'Friends',
     'follow': 'Follow',
 
-    // <<< CÁC DÒNG MỚI CHO TAB TIN NHẮN
+    // Messages Page
     'meta_search_hint': 'Ask Meta AI or search',
     'your_note': 'Your note',
     'location_sharing_off': 'Location sharing off',
     'map': 'Map',
     'pending_messages': 'Pending messages',
     'no_messages': 'No messages.',
-    'send_message': 'Send message...', // (Cái này cho Story View)
+    'new_messages': 'new messages', // ví dụ: "2 new messages"
+    'status_seen_last_week': 'Seen last week',
+    'status_sent': 'Sent',
+    'status_message_unavailable': 'Message unavailable',
+    // <<< CÁC DÒNG MỚI
+    'search': 'Search',
+    'cancel': 'Cancel',
+    'recent': 'Recent',
+    'see_all': 'See all',
+    'no_results_found': 'No results found.',
+    'clear_all': 'Clear all',
+    // <<< CÁC DÒNG MỚI
+    'profile_posts': 'posts',
+    'profile_followers': 'followers',
+    'profile_following': 'following',
+    'profile_edit': 'Edit profile',
+    'profile_share': 'Share profile',
   };
 }

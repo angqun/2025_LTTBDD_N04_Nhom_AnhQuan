@@ -1,4 +1,5 @@
 // lib/models/message_model.dart
+// BẢN CẬP NHẬT: Thêm 'newMessageCount' (Number)
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -6,17 +7,19 @@ class MessageThread {
   final String id;
   final String username;
   final String avatarUrl;
-  final String lastMessage;
-  final String timestamp;
+  final String lastMessageKey; // (Dùng cho "Đã gửi", "Đã xem")
+  final int newMessageCount;  // <<< THAY ĐỔI 1: Thêm (kiểu int)
+  final Timestamp? timestamp; 
   final bool isRead;
-  final String seenStatus; // 'none' hoặc 'camera'
+  final String seenStatus;
 
   MessageThread({
     required this.id,
     required this.username,
     required this.avatarUrl,
-    required this.lastMessage,
-    required this.timestamp,
+    required this.lastMessageKey, 
+    required this.newMessageCount, // <<< THAY ĐỔI 2
+    required this.timestamp, 
     required this.isRead,
     required this.seenStatus,
   });
@@ -27,8 +30,9 @@ class MessageThread {
       id: doc.id,
       username: data['username'] ?? 'No Username',
       avatarUrl: data['avatarUrl'] ?? '',
-      lastMessage: data['lastMessage'] ?? '',
-      timestamp: data['timestamp'] ?? '',
+      lastMessageKey: data['lastMessageKey'] ?? '', 
+      newMessageCount: data['newMessageCount'] ?? 0, // <<< THAY ĐỔI 3
+      timestamp: data['timestamp'], 
       isRead: data['isRead'] ?? true,
       seenStatus: data['seenStatus'] ?? 'none',
     );

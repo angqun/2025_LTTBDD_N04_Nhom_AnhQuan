@@ -370,4 +370,4 @@ class _ReelPlayerState extends State<ReelPlayer> {
       ],
     );
   }
-}
+} 
