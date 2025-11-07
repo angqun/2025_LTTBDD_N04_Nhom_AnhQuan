@@ -74,6 +74,13 @@ class AppStrings {
     'profile_following': 'đang theo dõi',
     'profile_edit': 'Chỉnh sửa',
     'profile_share': 'Chia sẻ trang cá nhân',
+    'new_story_highlight': 'Mới',
+    'number_thousand': 'K', // 24 nghìn
+    'number_million': 'tr', // 2,4 triệu
+    'number_billion': 'tỷ',
+    'menu_settings': 'Cài đặt và quyền riêng tư',
+    'menu_change_language': 'Đổi ngôn ngữ',
+    'menu_log_out': 'Đăng xuất',
   };
 
   // Bản dịch tiếng Anh (en)
@@ -150,5 +157,12 @@ class AppStrings {
     'profile_following': 'following',
     'profile_edit': 'Edit profile',
     'profile_share': 'Share profile',
+    'new_story_highlight': 'New',
+    'number_thousand': 'K', // 24 thousand
+    'number_million': 'M', // 2.4 million
+    'number_billion': 'B',
+    'menu_settings': 'Settings and privacy',
+    'menu_change_language': 'Change language',
+    'menu_log_out': 'Log out',
   };
 }

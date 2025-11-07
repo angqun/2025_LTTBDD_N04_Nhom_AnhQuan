@@ -1,5 +1,5 @@
 // lib/pages/messages_page.dart
-// BẢN SỬA LỖI: GỘP 2 APPBAR VÀ THÊM PADDING (ĐỆM)
+// BẢN SỬA LỖI: VIỀN DÀY HƠN, THANH SEARCH SÁT LÊN
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -17,7 +17,6 @@ class MessagesPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final lang = Provider.of<LanguageProvider>(context);
-    // Lấy user hiện tại để hiển thị tên và avatar
     final User? currentUser = FirebaseAuth.instance.currentUser; 
 
     return StreamBuilder<QuerySnapshot>(
@@ -34,22 +33,31 @@ class MessagesPage extends StatelessWidget {
         return NestedScrollView(
           headerSliverBuilder: (context, innerBoxIsScrolled) {
             return [
-              // <<< THAY ĐỔI 1: GỘP 2 APPBAR LÀM MỘT
+              // GỘP 2 APPBAR LÀM MỘT
               SliverAppBar(
                 backgroundColor: Theme.of(context).scaffoldBackgroundColor,
                 elevation: 0,
-                pinned: false, // Để tất cả cùng trôi lên
-                floating: true, // Cho phép trôi
+                pinned: false, 
+                floating: true, 
                 
-                // Phần "angquan1406"
-                leading: IconButton(
-                  icon: const Icon(
-                    Icons.edit_outlined, 
-                    color: Colors.black, 
-                    size: 28,
+                // <<< THAY ĐỔI 1: VIỀN "BÚT" DÀY HƠN
+                leading: Center(
+                  child: Container(
+                    width: 36, 
+                    height: 36, 
+                    decoration: BoxDecoration(
+                      color: Colors.transparent, // Nền trong suốt
+                      border: Border.all(color: Colors.black, width: 2.0), // <<< DÀY 2.0
+                      borderRadius: BorderRadius.circular(8.0), 
+                    ),
+                    child: const Icon(
+                      Icons.edit_outlined, 
+                      color: Colors.black, 
+                      size: 24, 
+                    ),
                   ),
-                  onPressed: () {}, 
                 ),
+
                 centerTitle: true, 
                 title: const Row(
                   mainAxisSize: MainAxisSize.min, 
@@ -73,16 +81,15 @@ class MessagesPage extends StatelessWidget {
                   Container(width: 56.0), // Cân bằng
                 ],
                 
-                // Phần "bottom" (Tìm kiếm, Ghi chú, Bản đồ)
+                // Phần "bottom"
                 bottom: PreferredSize(
-                  // Tổng chiều cao = 8 (đệm) + ~50 (search) + 110 (bubbles) = ~168
-                  preferredSize: const Size.fromHeight(168.0), 
+                  // <<< THAY ĐỔI 2: GIẢM CHIỀU CAO (VÌ PADDING ĐÃ GIẢM)
+                  preferredSize: const Size.fromHeight(164.0), 
                   child: Column(
                     children: [
-                      // <<< THAY ĐỔI 2: THÊM PADDING (ĐỆM) Ở ĐÂY
-                      // Đây là khoảng cách "1 chút" mà bạn muốn
+                      // <<< THAY ĐỔI 3: GIẢM PADDING (ĐỂ SÁT LÊN)
                       Padding(
-                        padding: const EdgeInsets.only(top: 8.0), 
+                        padding: const EdgeInsets.only(top: 4.0), // <<< GIẢM TỪ 8.0 XUỐNG 4.0
                         child: _buildSearchBar(lang),
                       ),
                       _buildNoteBubbles(lang, currentUser?.photoURL), 
@@ -94,9 +101,7 @@ class MessagesPage extends StatelessWidget {
           },
           body: Column(
             children: [
-              // Divider (Đường kẻ)
               const Divider(height: 1, color: Colors.grey, thickness: 0.2), 
-              
               _buildInboxHeader(lang), 
               if (snapshot.connectionState == ConnectionState.waiting && threads.isEmpty)
                 const Expanded(
@@ -104,7 +109,7 @@ class MessagesPage extends StatelessWidget {
                 )
               else
                 Expanded(
-                  child: _buildMessageList(lang, threads),
+                  child: _buildMessageList(context, lang, threads),
                 ),
             ],
           ),
@@ -115,7 +120,7 @@ class MessagesPage extends StatelessWidget {
 
   Widget _buildSearchBar(LanguageProvider lang) {
     return Container(
-      // <<< THAY ĐỔI 3: XÓA PADDING 'TOP' Ở ĐÂY
+      // (Padding 'top' đã bị xóa, nằm ở 'Column' cha)
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: TextField(
         readOnly: true, 
@@ -221,7 +226,7 @@ class MessagesPage extends StatelessWidget {
     );
   }
 
-  Widget _buildMessageList(LanguageProvider lang, List<MessageThread> threads) {
+  Widget _buildMessageList(BuildContext context, LanguageProvider lang, List<MessageThread> threads) {
     if (threads.isEmpty) {
       return Center(child: Text(lang.get('no_messages')));
     }
@@ -232,7 +237,6 @@ class MessagesPage extends StatelessWidget {
       itemBuilder: (context, index) {
         final thread = threads[index];
 
-        // LOGIC DỊCH BẢN PHỤ ĐỀ
         String subtitleText;
         if (thread.newMessageCount > 0) {
           subtitleText = '${thread.newMessageCount} ${lang.get('new_messages')}';
@@ -244,10 +248,8 @@ class MessagesPage extends StatelessWidget {
           subtitleText = '';
         }
 
-        // Tính toán thời gian
         String timeText = _formatTimestamp(context, thread.timestamp);
 
-        // Ghép 2 chuỗi lại
         if (subtitleText.isNotEmpty && timeText.isNotEmpty) {
           subtitleText = '$subtitleText · $timeText';
         } else if (subtitleText.isEmpty) {
@@ -297,7 +299,6 @@ class MessagesPage extends StatelessWidget {
     return const SizedBox.shrink();
   }
 
-  // HÀM TÍNH TOÁN VÀ DỊCH THỜI GIAN
   String _formatTimestamp(BuildContext context, Timestamp? timestamp) {
     if (timestamp == null) return ''; 
 
@@ -305,13 +306,13 @@ class MessagesPage extends StatelessWidget {
     final diff = DateTime.now().difference(timestamp.toDate());
 
     if (diff.inDays > 0) {
-      return '${diff.inDays} ${lang.get('days_ago')}'; // "2 ngày" hoặc "2 day"
+      return '${diff.inDays} ${lang.get('days_ago')}'; 
     } else if (diff.inHours > 0) {
-      return '${diff.inHours} ${lang.get('hours_ago')}'; // "2 giờ" hoặc "2 hour"
+      return '${diff.inHours} ${lang.get('hours_ago')}'; 
     } else if (diff.inMinutes > 0) {
-      return '${diff.inMinutes} ${lang.get('minutes_ago')}'; // "2 phút" hoặc "2 minute"
+      return '${diff.inMinutes} ${lang.get('minutes_ago')}'; 
     } else {
-      return lang.get('just_now'); // 'Vừa xong'
+      return lang.get('just_now'); 
     }
   }
 }
