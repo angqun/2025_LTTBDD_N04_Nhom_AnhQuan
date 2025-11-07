@@ -1,19 +1,19 @@
 // lib/pages/profile_page.dart
-// BẢN HOÀN CHỈNH: SỬA LỖI OVERFLOW + DÙNG LẠI STRING (THEO YÊU CẦU)
+// BẢN HOÀN CHỈNH: SỬA LỖI OVERFLOW + KẾT NỐI CHỨC NĂNG ĐỔI TÊN
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart'; 
 import 'package:font_awesome_flutter/font_awesome_flutter.dart'; 
-// (Xóa 'intl.dart')
+import 'package:btl/pages/edit_profile_page.dart'; // <<< Đã có import
 
 // (Sửa 'btl' nếu tên dự án bạn khác)
 import 'package:btl/providers/language_provider.dart';
 import 'package:btl/models/profile_story_model.dart'; 
 import 'package:btl/models/profile_post_model.dart'; 
-import 'package:btl/models/user_profile_data.dart'; // <<< DÙNG MODEL STRING
-import 'package:btl/l10n/app_strings.dart'; // (Cần cho menu ngôn ngữ)
+import 'package:btl/models/user_profile_data.dart'; 
+import 'package:btl/l10n/app_strings.dart'; 
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -209,7 +209,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                   IconButton(
                     icon: Icon(Icons.menu, color: Colors.black, size: 30),
                     onPressed: () {
-                       _showSettingsMenu(context, lang); // Kích hoạt Menu
+                      _showSettingsMenu(context, lang); // Kích hoạt Menu
                     },
                   ),
                 ],
@@ -292,7 +292,10 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
               Expanded(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start, 
+                  //
+                  // <<< SỬA LỖI 1: SỬA THUỘC TÍNH NÀY ĐỂ HẾT LỖI LAYOUT
+                  crossAxisAlignment: CrossAxisAlignment.stretch, 
+                  //
                   children: [
                     // Tên 'anhwwuan' (Ở TRÊN)
                     Padding(
@@ -304,24 +307,23 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                     ),
                     SizedBox(height: 8),
                     
-                    // <<< SỬA LỖI 1: SỬA HÀNG STATS (BỌC BẰNG EXPANDED)
+                    // Hàng Stats (Đã bọc Expanded ở file trước)
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
-                        // Bọc mỗi cột bằng Expanded (thay vì Flexible)
-                        Expanded( // <<< THAY ĐỔI
+                        Expanded( 
                           child: _buildStatColumn(
                             userData.postCount, 
                             lang.get('profile_posts')
                           )
                         ),
-                        Expanded( // <<< THAY ĐỔI
+                        Expanded( 
                           child: _buildStatColumn(
                             _translateStat(userData.followerCount, lang), 
                             lang.get('profile_followers')
                           )
                         ),
-                        Expanded( // <<< THAY ĐỔI
+                        Expanded( 
                           child: _buildStatColumn(
                             _translateStat(userData.followingCount, lang), 
                             lang.get('profile_following')
@@ -345,7 +347,18 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
           Row(
             children: [
               Expanded(
-                child: _buildProfileButton(lang.get('profile_edit'), () {}),
+                child: _buildProfileButton(
+                  lang.get('profile_edit'), 
+                  //
+                  // <<< SỬA LỖI 2: THÊM HÀNH ĐỘNG MỞ TRANG EDIT PROFILE
+                  () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => EditProfilePage()),
+                    );
+                  }
+                  //
+                ),
               ),
               SizedBox(width: 8),
               Expanded(
