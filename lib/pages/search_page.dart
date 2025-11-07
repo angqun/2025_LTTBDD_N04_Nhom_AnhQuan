@@ -1,16 +1,16 @@
 // lib/pages/search_page.dart
-// BẢN HOÀN CHỈNH: ĐÃ THÊM "LỊCH SỬ TÌM KIẾM" (LƯU VĨNH VIỄN)
+// BẢN SỬA LỖI: BỎ LISTENER + TẮT HÀNH ĐỘNG BẤM VÀO LỊCH SỬ
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart'; 
-import 'package:shared_preferences/shared_preferences.dart'; // <<< THÊM 1
-import 'dart:convert'; // <<< THÊM 2 (Để dùng jsonEncode/Decode)
+import 'package:shared_preferences/shared_preferences.dart'; 
+import 'dart:convert'; 
 
 // (Sửa 'btl' nếu tên dự án bạn khác)
 import 'package:btl/providers/language_provider.dart';
-import 'package:btl/pages/post_model.dart'; 
+// import 'package:btl/pages/post_model.dart'; // (Nên xóa dòng này nếu có)
 import 'package:btl/models/user_model.dart'; 
 
 class SearchPage extends StatefulWidget {
@@ -27,20 +27,13 @@ class _SearchPageState extends State<SearchPage> {
   bool _isSearching = false; 
   Stream<QuerySnapshot>? _searchResultsStream;
 
-  // <<< DANH SÁCH LỊCH SỬ
   List<UserModel> _recentSearches = [];
-  bool _isLoadingHistory = true; // Thêm cờ loading
+  bool _isLoadingHistory = true; 
 
   @override
   void initState() {
     super.initState();
-    _focusNode.addListener(() {
-      setState(() {
-        _isSearching = _focusNode.hasFocus;
-      });
-    });
-    
-    // <<< THAY ĐỔI 3: TẢI LỊCH SỬ KHI KHỞI ĐỘNG
+    // Xóa bỏ listener (đã fix ở bản trước)
     _loadRecentSearches();
   }
 
@@ -51,30 +44,26 @@ class _SearchPageState extends State<SearchPage> {
     super.dispose();
   }
 
-  // --- LOGIC LƯU/TẢI LỊCH SỬ (MỚI) ---
+  // --- LOGIC LƯU/TẢI LỊCH SỬ (Giữ nguyên) ---
 
   Future<void> _loadRecentSearches() async {
     final prefs = await SharedPreferences.getInstance();
-    // 1. Lấy danh sách các chuỗi JSON
     final List<String> historyJson = prefs.getStringList('recent_searches') ?? [];
     
-    // 2. Chuyển đổi chuỗi JSON thành List<UserModel>
     setState(() {
       _recentSearches = historyJson
           .map((jsonString) => UserModel.fromJson(jsonDecode(jsonString)))
           .toList();
-      _isLoadingHistory = false; // Tải xong
+      _isLoadingHistory = false; 
     });
   }
 
   Future<void> _saveRecentSearches() async {
     final prefs = await SharedPreferences.getInstance();
-    // 1. Chuyển đổi List<UserModel> thành List<String> (JSON)
     final List<String> historyJson = _recentSearches
         .map((user) => jsonEncode(user.toJson()))
         .toList();
         
-    // 2. Lưu vào SharedPreferences
     await prefs.setStringList('recent_searches', historyJson);
   }
 
@@ -95,28 +84,28 @@ class _SearchPageState extends State<SearchPage> {
 
   void _addToRecentSearches(UserModel user) {
     setState(() {
+      // Xóa nếu đã có, sau đó thêm lên đầu
       _recentSearches.removeWhere((item) => item.id == user.id);
       _recentSearches.insert(0, user);
-      // Giới hạn 10 item
       if (_recentSearches.length > 10) {
         _recentSearches = _recentSearches.sublist(0, 10);
       }
     });
-    _saveRecentSearches(); // <<< LƯU LẠI
+    _saveRecentSearches(); // Lưu lại
   }
 
   void _removeFromRecent(String userId) {
     setState(() {
       _recentSearches.removeWhere((item) => item.id == userId);
     });
-    _saveRecentSearches(); // <<< LƯU LẠI
+    _saveRecentSearches(); 
   }
 
   void _clearAllRecent() {
     setState(() {
       _recentSearches.clear();
     });
-    _saveRecentSearches(); // <<< LƯU LẠI
+    _saveRecentSearches(); 
   }
 
 
@@ -142,7 +131,6 @@ class _SearchPageState extends State<SearchPage> {
 
   // --- WIDGETS CON ---
 
-  // (Hàm _buildSearchBar giữ nguyên)
   Widget _buildSearchBar(LanguageProvider lang) {
     return Padding(
       padding: const EdgeInsets.all(8.0),
@@ -163,7 +151,23 @@ class _SearchPageState extends State<SearchPage> {
                   borderSide: BorderSide.none,
                 ),
               ),
+              
+              // Tự kích hoạt state khi bấm vào
+              onTap: () {
+                if (!_isSearching) {
+                  setState(() {
+                    _isSearching = true;
+                  });
+                }
+              },
+
               onChanged: (value) {
+                // Tự kích hoạt nếu người dùng gõ
+                if (!_isSearching) {
+                  setState(() {
+                    _isSearching = true;
+                  });
+                }
                 _performSearch(value);
               },
             ),
@@ -176,6 +180,11 @@ class _SearchPageState extends State<SearchPage> {
                   _searchController.clear();
                   _focusNode.unfocus(); 
                   _performSearch('');
+                  
+                  // Tự tắt state khi bấm hủy
+                  setState(() {
+                    _isSearching = false;
+                  });
                 },
                 child: Text(lang.get('cancel')),
               ),
@@ -215,7 +224,6 @@ class _SearchPageState extends State<SearchPage> {
     );
   }
 
-  // (Hàm _buildSearchResults - chỉ sửa onTap)
   Widget _buildSearchResults(LanguageProvider lang) {
     // Trạng thái 2: Đang focus, nhưng chưa gõ gì -> Hiển thị Lịch sử
     if (_searchController.text.isEmpty) {
@@ -247,8 +255,14 @@ class _SearchPageState extends State<SearchPage> {
               title: Text(user.username, style: TextStyle(fontWeight: FontWeight.bold)),
               subtitle: Text(user.displayName),
               onTap: () {
-                _addToRecentSearches(user); // <<< GỌI HÀM LƯU
-                print('Bấm vào ${user.username}');
+                // Chỉ gọi hàm lưu lại (đã fix ở bản trước)
+                _addToRecentSearches(user); 
+                print('Đã lưu ${user.username} vào lịch sử');
+                
+                // (Tùy chọn: bạn có thể tự fill text và giữ state)
+                _searchController.text = user.username;
+                _performSearch(user.username);
+                _focusNode.unfocus(); // Ẩn bàn phím
               },
             );
           },
@@ -257,9 +271,7 @@ class _SearchPageState extends State<SearchPage> {
     );
   }
   
-  // (Hàm _buildRecentSearches - thêm cờ loading)
   Widget _buildRecentSearches(LanguageProvider lang) {
-    // Nếu đang tải lịch sử từ SharedPreferences
     if (_isLoadingHistory) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -271,7 +283,6 @@ class _SearchPageState extends State<SearchPage> {
             padding: const EdgeInsets.all(16.0),
             child: Text(lang.get('recent'), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
           ),
-          // (Trống)
         ],
       );
     }
@@ -310,7 +321,8 @@ class _SearchPageState extends State<SearchPage> {
             },
           ),
           onTap: () {
-            print('Bấm vào ${user.username}');
+            // <<< SỬA LỖI THEO YÊU CẦU: KHÔNG LÀM GÌ CẢ
+            
           },
         );
       },

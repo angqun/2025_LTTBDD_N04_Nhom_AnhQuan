@@ -1,29 +1,33 @@
 // lib/widgets/reel_player.dart
-// BẢN SỬA LỖI: THÊM SETSTATE ĐỂ HIỂN THỊ LOADING KHI LƯỚT
+// BẢN NÀY ĐÃ CHUẨN - KHÔNG CẦN SỬA GÌ THÊM
+// (DÙNG KÈM VỚI BẢN 'REEL_PAGE TẢI 1 LẦN')
 
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; 
-import 'package:btl/models/reel_model.dart'; // (Sửa 'btl' nếu tên dự án bạn khác)
+import 'package:btl/models/reel_model.dart'; 
 import 'package:btl/providers/language_provider.dart';
 
 class ReelPlayer extends StatefulWidget {
   final Reel reel;
-  final bool isActive; 
+  final bool isActive;      
+  final bool isTabActive; 
 
   const ReelPlayer({
     super.key,
     required this.reel,
     required this.isActive,
+    required this.isTabActive, 
   });
 
   @override
   State<ReelPlayer> createState() => _ReelPlayerState();
 }
 
-class _ReelPlayerState extends State<ReelPlayer> {
+// Thêm 'with AutomaticKeepAliveClientMixin' VÀO ĐÂY
+class _ReelPlayerState extends State<ReelPlayer> with AutomaticKeepAliveClientMixin {
       
   VideoPlayerController? _controller;
   bool _isInitialized = false;
@@ -31,77 +35,97 @@ class _ReelPlayerState extends State<ReelPlayer> {
   bool _hasError = false; 
   late bool _isLiked;
 
+  // Báo cho PageView.builder biết "CẤM HỦY TÔI KHI LƯỚT QUA"
+  @override
+  bool get wantKeepAlive => true; // <<< CỰC KỲ QUAN TRỌNG
+
+  bool get _isTrulyActive => widget.isActive && widget.isTabActive;
+
   @override
   void initState() {
     super.initState();
     _isLiked = widget.reel.isLiked;
-    // Chỉ khởi tạo ngay nếu video này là video đầu tiên (active)
-    if (widget.isActive) {
+    if (_isTrulyActive) {
       _initializeAndPlay();
     }
   }
 
   void _initializeAndPlay() async {
     if (_isInitializing || _isInitialized) return; 
-    
-    _isInitializing = true;
-    _hasError = false;
-
-    // <<< SỬA LỖI 1: THÊM SETSTATE() Ở ĐÂY
-    // Báo cho UI biết là "tôi đang bắt đầu tải" (để nó hiện vòng xoay)
-    if (mounted) {
-      setState(() {});
-    }
+    setState(() {
+      _isInitializing = true;
+      _hasError = false;
+    });
 
     try {
-      _controller = VideoPlayerController.networkUrl(Uri.parse(widget.reel.videoUrl));
-      _controller!.addListener(() {
-        if (_controller!.value.hasError) {
-          if (mounted) setState(() { _hasError = true; });
+      final newController = VideoPlayerController.networkUrl(Uri.parse(widget.reel.videoUrl));
+      
+      newController.addListener(() {
+        if (newController.value.hasError) {
+          if (mounted) {
+            setState(() { _hasError = true; _isInitializing = false; });
+          }
         }
       });
-      await _controller!.initialize(); 
+
+      await newController.initialize(); 
+
+      if (!mounted) {
+        await newController.dispose();
+        return;
+      }
+
+      _controller = newController;
       _isInitialized = true;
       _isInitializing = false;
+      
       _controller!.setLooping(true); 
-      _controller!.setVolume(1.0); // Bật tiếng
-      _controller!.play(); 
-      if (mounted) setState(() {}); 
+      _controller!.setVolume(1.0);
+      
+      if (_isTrulyActive) {
+         _controller!.play();
+      }
+     
+      setState(() {}); 
     } catch (e) {
       print('--- CRASH KHI KHỞI TẠO VIDEO: $e ---');
-      _isInitializing = false;
-      _hasError = true; 
-      if (mounted) setState(() {});
+      if (mounted) {
+        setState(() {
+          _isInitializing = false;
+          _hasError = true; 
+        });
+      }
     }
   }
 
   @override
   void dispose() {
-    // <<< SỬA LỖI 2: KIỂM TRA KỸ TRƯỚC KHI HỦY
-    // Điều này ngăn lỗi "không lướt lên lại được"
-    if (_isInitialized) {
-      _controller?.pause();
+    if (_isInitialized && _controller != null) {
+      _controller!.pause();
+      _controller!.dispose();
     }
-    _controller?.dispose(); 
     super.dispose();
   }
 
   @override
   void didUpdateWidget(ReelPlayer oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Khi lướt TỚI video này
-    if (widget.isActive && !oldWidget.isActive) {
-      if (!_isInitialized) {
-        _initializeAndPlay();
+
+    final bool wasTrulyActive = oldWidget.isActive && oldWidget.isTabActive;
+    final bool isTrulyActive = widget.isActive && widget.isTabActive;
+
+    if (isTrulyActive != wasTrulyActive) {
+      if (isTrulyActive) {
+        if (!_isInitialized) {
+          _initializeAndPlay();
+        } else {
+          _controller?.setVolume(1.0);
+          _controller?.play(); 
+        }
       } else {
-        _controller?.setVolume(1.0);
-        _controller?.play(); 
-      }
-    } 
-    // Khi lướt ĐI KHỎI video này
-    else if (!widget.isActive && oldWidget.isActive) {
-      if (_isInitialized) {
-        _controller?.pause(); 
+        if (_isInitialized && _controller != null) {
+          _controller!.pause(); 
+        }
       }
     }
   }
@@ -119,6 +143,8 @@ class _ReelPlayerState extends State<ReelPlayer> {
   }
   
   void _onLikeToggle() {
+    // Hàm này VẪN HOẠT ĐỘNG
+    // Nó sẽ update Firebase, nhưng sẽ KHÔNG LÀM CRASH app nữa
     setState(() { _isLiked = !_isLiked; });
     FirebaseFirestore.instance
       .collection('reels') 
@@ -134,6 +160,8 @@ class _ReelPlayerState extends State<ReelPlayer> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // Bắt buộc cho KeepAlive
+
     if (_hasError) {
       return Container(
         color: Colors.black,
@@ -143,17 +171,16 @@ class _ReelPlayerState extends State<ReelPlayer> {
       );
     }
     
-    // Nếu chưa khởi tạo
     if (!_isInitialized) {
-      return Container(
-        color: Colors.black,
-        // Nếu đang tải (nhờ Sửa Lỗi 1) -> hiện loading
-        // Nếu không (chờ active) -> hiện màn hình đen
-        child: _isInitializing ? const Center(child: CircularProgressIndicator()) : Container(),
-      );
+      if (_isInitializing) {
+        return Container(
+          color: Colors.black,
+          child: const Center(child: CircularProgressIndicator(color: Colors.white)),
+        );
+      }
+      return Container(color: Colors.black);
     }
     
-    // Nếu đã khởi tạo
     return Scaffold(
       backgroundColor: Colors.black,
       body: Stack(
@@ -191,6 +218,7 @@ class _ReelPlayerState extends State<ReelPlayer> {
   
   // (Các hàm _buildUiOverlay, _buildRightPane, _buildLikeButton, 
   // _buildIconButton, _buildStaticAlbumArt, _buildLeftPane giữ nguyên)
+  // ... (Copy và dán toàn bộ các hàm build UI của bạn vào đây) ...
 
   Widget _buildUiOverlay(BuildContext context) {
     final lang = Provider.of<LanguageProvider>(context, listen: false);
@@ -370,4 +398,4 @@ class _ReelPlayerState extends State<ReelPlayer> {
       ],
     );
   }
-} 
+}
