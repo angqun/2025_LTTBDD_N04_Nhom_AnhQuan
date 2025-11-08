@@ -66,6 +66,7 @@ class AppStrings {
     'search': 'Tìm kiếm',
     'cancel': 'Hủy',
     'recent': 'Gần đây',
+    'status_seen': 'Đã xem',
     'see_all': 'Xem tất cả',
     'no_results_found': 'Không tìm thấy kết quả.',
     'clear_all': 'Xóa tất cả',
@@ -78,6 +79,9 @@ class AppStrings {
     'number_thousand': 'K', // 24 nghìn
     'number_million': 'tr', // 2,4 triệu
     'number_billion': 'tỷ',
+    'menu_about_us': 'Thông tin nhóm',
+'about_instructor': 'Giảng viên hướng dẫn',
+'about_team_members': 'Thành viên nhóm',
     'menu_settings': 'Cài đặt và quyền riêng tư',
     'menu_change_language': 'Đổi ngôn ngữ',
     'menu_log_out': 'Đăng xuất',
@@ -109,6 +113,7 @@ class AppStrings {
   // Bản dịch tiếng Anh (en)
   static const Map<String, String> en = {
     // Login Page
+    'status_seen': 'Seen',
     'language_name': 'English',
     'continue_with_facebook': 'Continue with Facebook',
     'login_button_text': 'Log In',
@@ -210,5 +215,8 @@ class AppStrings {
 'threads_toggle_subtitle': 'When you turn this setting on, the Instagram badge on your Threads profile will also disappear.',
 'switch_to_pro_account': 'Switch to professional account',
 'personal_info_settings': 'Personal information settings',
+'menu_about_us': 'About Us',
+'about_instructor': 'Instructor',
+'about_team_members': 'Team Members',
   };
 }

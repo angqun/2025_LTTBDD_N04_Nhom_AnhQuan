@@ -1,12 +1,13 @@
 // lib/pages/profile_page.dart
-// BẢN HOÀN CHỈNH: SỬA LỖI OVERFLOW + KẾT NỐI CHỨC NĂNG ĐỔI TÊN
+// BẢN HOÀN CHỈNH: ĐÃ SỬA LỖI OVERFLOW + THÊM "THÔNG TIN NHÓM" VÀO MENU
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart'; 
 import 'package:font_awesome_flutter/font_awesome_flutter.dart'; 
-import 'package:btl/pages/edit_profile_page.dart'; // <<< Đã có import
+import 'package:btl/pages/edit_profile_page.dart'; 
+import 'package:btl/pages/about_us_page.dart'; // <<< THÊM 1: IMPORT TRANG ABOUT US
 
 // (Sửa 'btl' nếu tên dự án bạn khác)
 import 'package:btl/providers/language_provider.dart';
@@ -66,7 +67,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
     }
   }
 
-  // Hàm mở Bảng chọn Ngôn ngữ
+  // Hàm mở Bảng chọn Ngôn ngữ (Không đổi)
   void _showLanguagePicker(BuildContext context, LanguageProvider lang) {
     showModalBottomSheet(
       context: context,
@@ -109,6 +110,9 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
     );
   }
 
+  //
+  // <<< SỬA LỖI 2: CẬP NHẬT HÀM MENU CÀI ĐẶT
+  //
   // Hàm mở Menu Cài đặt
   void _showSettingsMenu(BuildContext context, LanguageProvider lang) {
     showModalBottomSheet(
@@ -129,6 +133,8 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
               const Divider(height: 24),
+              
+              // 1. Nút Đổi Ngôn ngữ
               ListTile(
                 leading: const Icon(Icons.language),
                 title: Text(lang.get('menu_change_language')),
@@ -137,6 +143,22 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                   _showLanguagePicker(context, lang); 
                 },
               ),
+
+              // 2. Nút Thông tin nhóm (THÊM MỚI THEO YÊU CẦU)
+              ListTile(
+                leading: const Icon(Icons.info_outline),
+                title: Text(lang.get('menu_about_us')), // 'Thông tin nhóm'
+                onTap: () {
+                  Navigator.pop(ctx); // 1. Đóng menu Cài đặt
+                  // 2. Mở trang Thông tin nhóm (dùng context gốc)
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => AboutUsPage()),
+                  );
+                },
+              ),
+
+              // 3. Nút Đăng xuất
               ListTile(
                 leading: const Icon(Icons.logout, color: Colors.red),
                 title: Text(
@@ -170,9 +192,9 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
           displayName: 'anhwwuan',
           avatarUrl: currentUser?.photoURL ?? 'https://picsum.photos/id/1005/100/100',
           bio: '@angquan1406',
-          postCount: '0', // Dạng String
-          followerCount: '0', // Dạng String
-          followingCount: '0', // Dạng String
+          postCount: '0', 
+          followerCount: '0', 
+          followingCount: '0', 
         );
         
         if (userSnapshot.hasData && userSnapshot.data!.exists) {
@@ -288,26 +310,23 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                 ],
               ),
               
-              // Stats
+              // Stats (Đã Sửa lỗi Layout)
               Expanded(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
-                  //
-                  // <<< SỬA LỖI 1: SỬA THUỘC TÍNH NÀY ĐỂ HẾT LỖI LAYOUT
-                  crossAxisAlignment: CrossAxisAlignment.stretch, 
-                  //
+                  crossAxisAlignment: CrossAxisAlignment.stretch, // Sửa lỗi ở đây
                   children: [
                     // Tên 'anhwwuan' (Ở TRÊN)
                     Padding(
                       padding: const EdgeInsets.only(left: 20.0), 
                       child: Text(
-                        userData.displayName, // "anhwwuan"
+                        userData.displayName, 
                         style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                       ),
                     ),
                     SizedBox(height: 8),
                     
-                    // Hàng Stats (Đã bọc Expanded ở file trước)
+                    // Hàng Stats
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
@@ -349,15 +368,13 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
               Expanded(
                 child: _buildProfileButton(
                   lang.get('profile_edit'), 
-                  //
-                  // <<< SỬA LỖI 2: THÊM HÀNH ĐỘNG MỞ TRANG EDIT PROFILE
+                  // Kích hoạt nút Chỉnh sửa
                   () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(builder: (context) => EditProfilePage()),
                     );
                   }
-                  //
                 ),
               ),
               SizedBox(width: 8),
@@ -373,7 +390,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
     );
   }
   
-  // (Hàm phụ cho Stats - đã sửa)
+  // (Hàm phụ cho Stats)
   Widget _buildStatColumn(String count, String label) {
     return Column(
       mainAxisSize: MainAxisSize.min, 
@@ -383,13 +400,13 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
         Text(
           label, 
           style: TextStyle(fontSize: 14),
-          textAlign: TextAlign.center, // Căn giữa
+          textAlign: TextAlign.center, 
         ),
       ],
     );
   }
 
-  // (Hàm phụ cho Nút - Không đổi)
+  // (Hàm phụ cho Nút)
   Widget _buildProfileButton(dynamic textOrIcon, VoidCallback onPressed, {bool isIconButton = false, double? size}) {
     return Container(
       height: 34, 
@@ -410,7 +427,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
     );
   }
 
-  // (Story Highlights - Đã sửa viền và xóa nút "Mới")
+  // (Story Highlights)
   Widget _buildStoryHighlights(LanguageProvider lang) {
     return Container(
       height: 110,
@@ -452,7 +469,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
     );
   }
 
-  // (Lưới bài đăng cá nhân - Không đổi)
+  // (Lưới bài đăng cá nhân)
   Widget _buildPostsGrid(LanguageProvider lang) {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance.collection('postcanhan').snapshots(),
@@ -494,7 +511,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
   }
 }
 
-// (Class _SliverTabBarDelegate - Không đổi)
+// (Class _SliverTabBarDelegate)
 class _SliverTabBarDelegate extends SliverPersistentHeaderDelegate {
   _SliverTabBarDelegate(this._tabBar);
   final TabBar _tabBar;
